@@ -1,6 +1,7 @@
 # self define
 *.zip
 *.pdf
+IRMAS*
 
 
 # Byte-compiled / optimized / DLL files
