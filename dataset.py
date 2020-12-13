@@ -5,10 +5,10 @@ import numpy as np
 import glob
 
 
-def get_data(label, number: int, true_p=0.5, is_train=True):
+def get_data(label, number: int, true_p=0.3, is_train=True):
     # 接受所需的标签，返回对应的正类及负类文件名
     # 加一个标签，决定从训练集还是测试集读取
-    dataset_path = './IRMAS-TrainingData'
+    dataset_path = './dataset/IRMAS-TrainingData'
     all_pos_data = glob.glob(
         f'{dataset_path}/{label}/*.wav')
     pos_data_file = sample(all_pos_data, int(number * true_p))
