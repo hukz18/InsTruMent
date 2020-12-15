@@ -7,6 +7,7 @@ import numpy as np
 import warnings
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import AgglomerativeClustering
+from sklearn import manifold
 
 def pca_plot(X):# 画PCA的拐点图，差不多选前3个或者前2的变量没啥问题
     PCA_model = PCA(n_components=10)
@@ -67,3 +68,8 @@ def hierarchical_predict(X,n_centers=30,linkage="ward"): #层次聚类
     Y_predict = ac.fit_predict(X)
     return(Y_predict)
 
+def t_SNE2(X):
+    print("Computing t-SNE embedding")
+    tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
+    X_tsne = tsne.fit_transform(X)
+    return X_tsne
