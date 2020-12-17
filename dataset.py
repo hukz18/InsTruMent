@@ -130,5 +130,27 @@ def get_data_list_weight(label_list, number: int, weight, is_train=True):
     p = np.random.permutation(len(true_list))
     return waves[p], samples[p], true_list[p]
 
+def get_label_test():
+    #读取测试集wave和sample，还有标签，返回迭代器
+
+    dataset_path = './IRMAS-TestingData-Part1/Part1'
+    all_data = glob.glob(f'{dataset_path}/*.wav')
+    #打乱
+    shuffle(all_data)
+
+    for file in all_data:
+        w, s = librosa.load(file)
+        # print(w.shape)
+        w = np.array(w)
+        s = np.array(s)
+
+        label_path = file[0:-3]+'txt'
+        txtfile = open(label_path,'r')
+        true_class = [x.strip() for x in txtfile]
+        txtfile.close()
+        yield w, s, true_class
+
+
 if __name__ == '__main__':
-    waves,samples,true_list=get_data_list_weight(['cel','vio'],10,[0.5,0,0,0,0,0,0,0,0.1,0.4,0])
+    for w,s,true_class in get_label_test():
+        print(true_class)
