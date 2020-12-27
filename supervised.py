@@ -1,7 +1,44 @@
 import numpy as np
 from sklearn import svm
-from sklearn.metrics import accuracy_score
+from feature import get_feature
+from sklearn.metrics import accuracy_score, recall_score, precision_score
 from sklearn.model_selection import GridSearchCV, train_test_split
+
+
+class SVM:
+    def __init__(self):
+        self.labels = ['cel', 'cla', 'flu', 'gac', 'gel', 'org', 'pia', 'sax', 'tru', 'vio', 'voi']
+        self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
+        self.classifiers = []
+        self.class_num = 11
+        # self.meta_labels = []
+        # self.meta_classifiers = []
+
+    def add_svm(self, features, labels):
+        sub_svm = train_svm(features, labels)
+        self.classifiers.append(sub_svm)
+
+    def predict_one(self, wave, sample):
+        wave = wave[np.newaxis, :]
+        sample = sample[np.newaxis]
+        feature = get_feature(wave, sample)
+        result = np.zeros(self.class_num)
+        feature = np.mean(feature, axis=2)
+        for i in range(self.class_num):
+            result[i] = self.classifiers[i].predict(feature)
+        return result
+
+    def evaluate(self, test_iter):
+        true_labels, predict_labels = [], []
+        for wave, sample, labels in test_iter:
+            true_label = np.zeros(self.class_num)
+            for label in labels:
+                true_label[self.label_to_idx[label]] = True
+            true_labels.append(true_label)
+            predict_labels.append(self.predict_one(wave, sample))
+        predict_labels = np.array(predict_labels)
+        true_labels = np.array(true_labels)
+        print(accuracy_score(true_labels, predict_labels))
 
 
 def svm_param_select(X, Y, n_folds=3):
@@ -14,7 +51,7 @@ def svm_param_select(X, Y, n_folds=3):
     return grid_search.best_params_
 
 
-def svm_train(X, Y):
+def train_svm(X, Y):
     X = np.mean(X, axis=2)
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
     param = svm_param_select(X_train, Y_train)
@@ -25,11 +62,7 @@ def svm_train(X, Y):
     predicted_test = svm_classifier.predict(X_test)
     print(accuracy_score(predicted_train, Y_train))
     print(accuracy_score(predicted_test, Y_test))
-    return svm
-
-
-def svm_predict(x, labels, classifiers):
-    pass
+    return svm_classifier
 
 
 def RF_train(X, Y):
