@@ -44,7 +44,7 @@ def get_data(label, number: int, true_p=0.3, is_train=True):
 def get_data_list(label_list, number: int, true_p=0.3, is_train=True):
     # 接受所需的标签列表，返回对应的正类及负类文件名,true_p现在表示全部正类占比了
     # 加一个标签，决定从训练集还是测试集读取
-    dataset_path = './IRMAS-TrainingData'
+    dataset_path = './dataset/IRMAS-TrainingData'
 
     all_pos_data = []
     for label in label_list:
@@ -61,7 +61,7 @@ def get_data_list(label_list, number: int, true_p=0.3, is_train=True):
     for label in labels:
         if label in label_list:
             continue
-        neg_file = glob.glob(f'{dataset_path}/[!{label[0]}][!{label[1]}][!{label[2]}]/*.wav')
+        neg_file = glob.glob(f'{dataset_path}/{label}/*.wav')
         all_neg_file += neg_file
 
     neg_data_file = sample(all_neg_file, int(number * (1 - true_p)))
@@ -91,7 +91,7 @@ def get_data_list(label_list, number: int, true_p=0.3, is_train=True):
 def get_data_list_weighted(label_list, number: int, weight, is_train=True):
     # 接受所需的标签列表，返回对应的正类及负类文件名,true_p现在没了，用weight表示比例
     # 加一个标签，决定从训练集还是测试集读取
-    dataset_path = './IRMAS-TrainingData'
+    dataset_path = './dataset/IRMAS-TrainingData'
     labels = ['cel', 'cla', 'flu', 'gac', 'gel', 'org', 'pia', 'sax', 'tru', 'vio', 'voi']  # 需要识别的乐器
 
     true_list = []
@@ -109,7 +109,7 @@ def get_data_list_weighted(label_list, number: int, weight, is_train=True):
         label = labels[i]
         if label in label_list:
             continue
-        neg_file = glob.glob(f'{dataset_path}/[!{label[0]}][!{label[1]}][!{label[2]}]/*.wav')
+        neg_file = glob.glob(f'{dataset_path}/{label}/*.wav')
         neg_data_file += sample(neg_file, int(number * weight[i]))
         true_list += [False] * int(number * weight[i])
 
@@ -133,7 +133,7 @@ def get_data_list_weighted(label_list, number: int, weight, is_train=True):
     return waves[p], samples[p], true_list[p]
 
 
-def get_test_data(num=None):
+def get_test_data_iter(num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
 
     dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
@@ -154,7 +154,34 @@ def get_test_data(num=None):
         txtfile.close()
         yield w, s, true_class
 
+def get_test_data_whole(num=None):
+    # 读取测试集wave和sample，还有标签，返回迭代器
+
+    dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
+    all_data = glob.glob(f'{dataset_path}/*.wav')
+    # 打乱
+    shuffle(all_data)
+    if num is not None:
+        all_data = all_data[:num]
+
+    waves = []
+    samples = []
+    true_list = []
+    for file in all_data:
+        w, s = librosa.load(file)
+        # print(w.shape)
+        w = np.array(w)
+        s = np.array(s)
+
+        label_path = file[0:-3] + 'txt'
+        txtfile = open(label_path, 'r')
+        true_class = [x.strip() for x in txtfile]
+        txtfile.close()
+        
+        waves.append(w)
+        samples.append(s)
+        true_list.append(true_class)
+    return waves, samples, true_list
 
 if __name__ == '__main__':
-    for w, s, true_class in get_test_data():
-        print(true_class)
+    w, s, true_class = get_data_list(['voi'],10)
