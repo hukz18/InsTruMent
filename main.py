@@ -1,18 +1,24 @@
-from dataset import get_data, get_test_data
-from feature import get_feature
+from dataset import *
+from feature import *
 from supervised import SVM
 import unsuperivesd
 import numpy as np
 
 '''
-    Annotations: The annotation of the predominant instrument of 
-    each excerpt is both in the name of the containing folder, 
-    and in the file name: cello (cel), clarinet (cla), flute (flu), 
-    acoustic guitar (gac), electric guitar (gel), organ (org), piano (pia), 
-    saxophone (sax), trumpet (tru), violin (vio), and human singing voice (voi). 
-    The number of files per instrument are: cel(388), cla(505), flu(451), 
-    gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778). 
+    Annotations: The annotation of the predominant instrument of
+    each excerpt is both in the name of the containing folder,
+    and in the file name: cello (cel), clarinet (cla), flute (flu),
+    acoustic guitar (gac), electric guitar (gel), organ (org), piano (pia),
+    saxophone (sax), trumpet (tru), violin (vio), and human singing voice (voi).
+    The number of files per instrument are: cel(388), cla(505), flu(451),
+    gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
+
+dataset_path = './IRMAS-TrainingData'
+is_gen_mfcc = False
+
+if is_gen_mfcc:
+    generate_features(dataset_path)
 
 if __name__ == '__main__':
     # meta_labels=['wind','']
@@ -21,9 +27,15 @@ if __name__ == '__main__':
     svm_classifiers = SVM()
 
     for label in labels:
-        waves, samples, labels = get_data(label, 50, 0.3)
-        features = get_feature(waves, samples)
-        svm_classifiers.add_svm(features, labels)
+        label_dict = {l: (True, 300)
+                      if l == label else (False, 200)
+                      for l in labels}
+        print(label_dict)
+        mfccs, lbs = get_data_list_weighted_npy(
+            dataset_path, label_dict)
+        # break
+        features = get_feature_npy(mfccs)
+        svm_classifiers.add_svm(features, lbs)
     test_iter = get_test_data()
     svm_classifiers.evaluate(test_iter)
     # 无监督部分

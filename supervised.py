@@ -7,7 +7,8 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 
 class SVM:
     def __init__(self):
-        self.labels = ['cel', 'cla', 'flu', 'gac', 'gel', 'org', 'pia', 'sax', 'tru', 'vio', 'voi']
+        self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
+                       'org', 'pia', 'sax', 'tru', 'vio', 'voi']
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
         self.classifiers = []
         self.class_num = 11
@@ -52,7 +53,7 @@ def svm_param_select(X, Y, n_folds=3):
 
 
 def train_svm(X, Y):
-    X = np.mean(X, axis=2)
+    # X = np.mean(X, axis=2)
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
     param = svm_param_select(X_train, Y_train)
     print(param)
@@ -67,7 +68,8 @@ def train_svm(X, Y):
 
 def RF_train(X, Y):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-    RF_classifier = RandomForestClassifier(n_estimators=500, random_state=1993, max_depth=18)
+    RF_classifier = RandomForestClassifier(
+        n_estimators=500, random_state=1993, max_depth=18)
     RF_classifier.fit(X_train, y_train)
     predicted_train = RF_classifier.predict(X_train)
     predicted_test = RF_classifier.predict(Y_train)
@@ -79,7 +81,8 @@ def RF_train(X, Y):
 
 def XGB_train(X, Y):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-    XGB_classifier = XGBClassifier(n_estimators=300, max_depth=70, learning_rate=1)
+    XGB_classifier = XGBClassifier(
+        n_estimators=300, max_depth=70, learning_rate=1)
     XGB_classifier.fit(X_train, y_train)
     predicted_train = XGB_classifier.predict(X_train)
     predicted_test = XGB_classifier.predict(Y_train)
