@@ -68,51 +68,48 @@ def get_test_data_iter(num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
 
     dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
-    all_data = glob(f'{dataset_path}/*.wav')
+    all_data = glob(f'{dataset_path}/*.npy')
     # 打乱
     shuffle(all_data)
     if num is not None:
         all_data = all_data[:num]
+
     for file in all_data:
-        w, s = librosa.load(file)
-        # print(w.shape)
-        w = np.array(w)
-        s = np.array(s)
+        mfcc = np.load(file)
+        print(f'mfcc.shape = {mfcc.shape}')
 
         label_path = file[0:-3] + 'txt'
         txtfile = open(label_path, 'r')
         true_class = [x.strip() for x in txtfile]
         txtfile.close()
-        yield w, s, true_class
+        yield mfcc, true_class
 
 def get_test_data_whole(num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
 
     dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
-    all_data = glob.glob(f'{dataset_path}/*.wav')
+    all_data = glob(f'{dataset_path}/*.npy')
     # 打乱
     shuffle(all_data)
     if num is not None:
         all_data = all_data[:num]
 
-    waves = []
-    samples = []
+    mfccs = []
     true_list = []
     for file in all_data:
-        w, s = librosa.load(file)
-        # print(w.shape)
-        w = np.array(w)
-        s = np.array(s)
+        mfcc = np.load(file)
+        print(f'mfcc.shape = {mfcc.shape}')
+        mfccs.append(mfcc)
 
         label_path = file[0:-3] + 'txt'
         txtfile = open(label_path, 'r')
         true_class = [x.strip() for x in txtfile]
         txtfile.close()
         
-        waves.append(w)
-        samples.append(s)
         true_list.append(true_class)
-    return waves, samples, true_list
+    mfccs = np.array(mfccs)
+    return mfccs, true_list
 
 if __name__ == '__main__':
-    w, s, true_class = get_data_list(['voi'],10)
+    for mfcc,true_class in get_test_data_whole():
+        print(true_class)
