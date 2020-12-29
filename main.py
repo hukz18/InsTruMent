@@ -27,8 +27,8 @@ if __name__ == '__main__':
     svm_classifiers = SVM()
 
     for label in labels:
-        label_dict = {l: (True, 300)
-                      if l == label else (False, 200)
+        label_dict = {l: (True, 500)
+                      if l == label else (False, 500)
                       for l in labels}
         print(label_dict)
         mfccs, lbs = get_data_list_weighted_npy(
