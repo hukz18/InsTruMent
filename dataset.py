@@ -36,6 +36,7 @@ def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
     return waves[p], samples[p], true_list[p]
 
 
+
 def get_data_list_weighted_npy(dataset_path: str, label_dict: dict,  is_train=True):
     '''
     label_dict : the key is string of label , word is (is_positive_class, number)
@@ -63,7 +64,7 @@ def get_data_list_weighted_npy(dataset_path: str, label_dict: dict,  is_train=Tr
     return mfccs[p], true_list[p]
 
 
-def get_test_data(num=None):
+def get_test_data_iter(num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
 
     dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
@@ -84,7 +85,34 @@ def get_test_data(num=None):
         txtfile.close()
         yield w, s, true_class
 
+def get_test_data_whole(num=None):
+    # 读取测试集wave和sample，还有标签，返回迭代器
+
+    dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
+    all_data = glob.glob(f'{dataset_path}/*.wav')
+    # 打乱
+    shuffle(all_data)
+    if num is not None:
+        all_data = all_data[:num]
+
+    waves = []
+    samples = []
+    true_list = []
+    for file in all_data:
+        w, s = librosa.load(file)
+        # print(w.shape)
+        w = np.array(w)
+        s = np.array(s)
+
+        label_path = file[0:-3] + 'txt'
+        txtfile = open(label_path, 'r')
+        true_class = [x.strip() for x in txtfile]
+        txtfile.close()
+        
+        waves.append(w)
+        samples.append(s)
+        true_list.append(true_class)
+    return waves, samples, true_list
 
 if __name__ == '__main__':
-    for w, s, true_class in get_test_data():
-        print(true_class)
+    w, s, true_class = get_data_list(['voi'],10)
