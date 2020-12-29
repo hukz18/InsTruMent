@@ -5,6 +5,26 @@ import numpy as np
 from glob import glob
 
 
+def sample_multiple(l: list, num: int):
+    result = []
+    while num > len(l):
+        result += sample(l, len(l))
+        num -= len(l)
+    result += sample(l, num)
+    return result
+
+
+def get_file_list(dataset_path: str, label_dict: dict, file_type: str,  is_train=True):
+    true_list = []
+    all_file = []
+    for label, (is_pos, num) in label_dict.items():
+        assert type(is_pos) is bool
+        all_file += sample_multiple(
+            glob(f'{dataset_path}/{label}/*.{file_type}'), num)
+        true_list += [is_pos] * num
+    return all_file, true_list
+
+
 def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
     '''
     label_dict : the key is string of label , word is (is_positive_class, number)
@@ -13,13 +33,8 @@ def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
         samples: the sample rate of waves
         true_list: whether the wave is positive class
     '''
-    true_list = []
-    all_file = []
-    for label, (is_pos, num) in label_dict.items():
-        assert type(is_pos) is bool
-        all_file += sample(glob(f'{dataset_path}/{label}/*.wav'), num)
-        true_list += [is_pos] * num
-
+    all_file, true_list = get_file_list(
+        dataset_path, label_dict, file_type='wav', is_train=is_train)
     waves = []
     samples = []
     for file in all_file:
@@ -36,7 +51,6 @@ def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
     return waves[p], samples[p], true_list[p]
 
 
-
 def get_data_list_weighted_npy(dataset_path: str, label_dict: dict,  is_train=True):
     '''
     label_dict : the key is string of label , word is (is_positive_class, number)
@@ -45,13 +59,8 @@ def get_data_list_weighted_npy(dataset_path: str, label_dict: dict,  is_train=Tr
         samples: the sample rate of waves
         true_list: whether the wave is positive class
     '''
-    true_list = []
-    all_file = []
-    for label, (is_pos, num) in label_dict.items():
-        assert type(is_pos) is bool
-        all_file += sample(glob(f'{dataset_path}/{label}/*.npy'), num)
-        true_list += [is_pos] * num
-
+    all_file, true_list = get_file_list(
+        dataset_path, label_dict, file_type='npy', is_train=is_train)
     mfccs = []
     for file in all_file:
         mfcc = np.load(file)
@@ -84,6 +93,7 @@ def get_test_data_iter(num=None):
         txtfile.close()
         yield mfcc, true_class
 
+
 def get_test_data_whole(num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
 
@@ -109,6 +119,7 @@ def get_test_data_whole(num=None):
         true_list.append(true_class)
     mfccs = np.array(mfccs)
     return mfccs, true_list
+
 
 if __name__ == '__main__':
     for mfcc,true_class in get_test_data_whole():
