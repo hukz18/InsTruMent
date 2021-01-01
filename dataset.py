@@ -85,8 +85,6 @@ def get_test_data_iter(num=None):
 
     for file in all_data:
         mfcc = np.load(file)
-        print(f'mfcc.shape = {mfcc.shape}')
-
         label_path = file[0:-3] + 'txt'
         txtfile = open(label_path, 'r')
         true_class = [x.strip() for x in txtfile]

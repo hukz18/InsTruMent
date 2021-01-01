@@ -72,7 +72,7 @@ class SVM:
         predict_labels = np.array(predict_labels)
         true_labels = np.array(true_labels)
         print(accuracy_score(true_labels, predict_labels))
-        confusion = confusion_mat(np.mat(true_labels), np.mat(predict_labels))
+        confusion = co_est_mat(np.mat(true_labels), np.mat(predict_labels))
         plt.matshow(confusion)
         plt.show()
 

@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     for label in labels:
         print('training:' + label)
-        label_dict = {l: (True, 50) if l == label else (False, 50) for l in labels}
+        label_dict = {l: (True, 500) if l == label else (False, 500) for l in labels}
         # print(label_dict)
         mfccs, lbs = get_data_list_weighted_npy(dataset_path, label_dict)
         features = get_feature_npy(mfccs)
