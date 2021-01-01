@@ -23,7 +23,7 @@ def get_feature(waves, samples):
         mfcc = librosa.feature.mfcc(y=waves[i], sr=samples[i], n_mfcc=40)
         mfccs.append(mfcc)
     mfccs = np.array(mfccs)
-    print(f'mfccs.shape = {mfccs.shape}')
+    # print(f'mfccs.shape = {mfccs.shape}')
     return mfccs
 
 
