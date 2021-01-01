@@ -14,7 +14,7 @@ import numpy as np
     gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './IRMAS-TrainingData'
+dataset_path = './dataset/IRMAS-TrainingData'
 is_gen_mfcc = False
 
 if is_gen_mfcc:
@@ -27,17 +27,16 @@ if __name__ == '__main__':
     svm_classifiers = SVM()
 
     for label in labels:
-        label_dict = {l: (True, 500)
-                      if l == label else (False, 500)
-                      for l in labels}
-        print(label_dict)
-        mfccs, lbs = get_data_list_weighted_npy(
-            dataset_path, label_dict)
-        # break
+        print('training:' + label)
+        label_dict = {l: (True, 500) if l == label else (False, 500) for l in labels}
+        # print(label_dict)
+        mfccs, lbs = get_data_list_weighted_npy(dataset_path, label_dict)
         features = get_feature_npy(mfccs)
         svm_classifiers.add_svm(features, lbs)
-    test_iter = get_test_data()
+        # svm_classifiers.add_svm(features, lbs)
+    test_iter = get_test_data_iter()
     svm_classifiers.evaluate(test_iter)
+
     # 无监督部分
 
     # 从文件读取mfcc 这个快一点，代码用的是上面那样的

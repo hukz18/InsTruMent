@@ -1,6 +1,10 @@
 import numpy as np
+from tqdm import tqdm
 from sklearn import svm
-from feature import get_feature
+import matplotlib.pyplot as plt
+from feature import get_feature_npy
+from evaluation import *
+from dataset import get_data_list_weighted
 from sklearn.metrics import accuracy_score, recall_score, precision_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 
@@ -10,41 +14,73 @@ class SVM:
         self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
                        'org', 'pia', 'sax', 'tru', 'vio', 'voi']
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
-        self.classifiers = []
+        self.meta_labels = {}
+        self.discriminators = []
+        self.meta_discriminators = []
         self.class_num = 11
+        self.meta_class_num = 4
         # self.meta_labels = []
         # self.meta_classifiers = []
 
+    def add_meta_svm(self, labels):
+        waves, samples, labels = get_data_list(labels, 2000, 0.5)
+        features = get_feature(waves, samples)
+        meta_svm = train_svm(features, labels)
+        self.meta_discriminators.append(meta_svm)
+
     def add_svm(self, features, labels):
         sub_svm = train_svm(features, labels)
-        self.classifiers.append(sub_svm)
+        self.discriminators.append(sub_svm)
 
-    def predict_one(self, wave, sample):
+    def predict_meta(self, wave, sample):
         wave = wave[np.newaxis, :]
         sample = sample[np.newaxis]
         feature = get_feature(wave, sample)
-        result = np.zeros(self.class_num)
         feature = np.mean(feature, axis=2)
+        result = np.zeros(self.meta_class_num)
+        for i in range(self.meta_class_num):
+            result[i] = self.meta_discriminators[i].predict(feature)
+        return result
+
+    def predict_whole(self, wave, sample):
+        num_item = np.shape(wave, 0)
+        result = np.zeros(num_item, self.class_num)
+        feature = np.mean(get_feature(wave, sample), axis=2)
         for i in range(self.class_num):
-            result[i] = self.classifiers[i].predict(feature)
+            result[:, i] = self.discriminators[i].predict(feature)
+        return result
+
+    def predict_one(self, mfcc, meta_label=None):
+        mfcc = mfcc[np.newaxis, :]
+        result = np.zeros(self.class_num)
+        feature = get_feature_npy(mfcc)
+        for i in range(self.class_num):
+            result[i] = self.discriminators[i].predict(feature)
         return result
 
     def evaluate(self, test_iter):
         true_labels, predict_labels = [], []
-        for wave, sample, labels in test_iter:
+        for mfcc, labels in tqdm(test_iter):
             true_label = np.zeros(self.class_num)
+            # meta_label = self.predict_one(wave, sample)
+            # meta_label = np.where(meta_label)[0].tolist()  # 含有哪些基类
             for label in labels:
                 true_label[self.label_to_idx[label]] = True
             true_labels.append(true_label)
-            predict_labels.append(self.predict_one(wave, sample))
+            # predict_labels.append(self.predict_one(mfcc, meta_label))
+            predict_labels.append(self.predict_one(mfcc))
         predict_labels = np.array(predict_labels)
         true_labels = np.array(true_labels)
         print(accuracy_score(true_labels, predict_labels))
+        confusion = co_est_mat(np.mat(true_labels), np.mat(predict_labels))
+        plt.matshow(confusion)
+        plt.show()
 
 
 def svm_param_select(X, Y, n_folds=3):
-    Cs = [0.01, 0.1, 1, 10]
-    gammas = [0.001, 0.01, 0.1, 1]
+    # Cs = [0.01, 0.1, 1, 10]
+    Cs = [5, 10, 20, 50]
+    gammas = ['scale', 'auto', 0.0001, 0.005, 0.001]
     kernels = ['rbf', 'sigmoid']
     param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels}
     grid_search = GridSearchCV(svm.SVC(), param_grid, cv=n_folds)

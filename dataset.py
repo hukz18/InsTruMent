@@ -1,5 +1,5 @@
 import os
-from random import *
+from random import shuffle, sample
 import librosa
 import numpy as np
 from glob import glob
@@ -28,7 +28,7 @@ def get_file_list(dataset_path: str, label_dict: dict, file_type: str,  is_train
 def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
     '''
     label_dict : the key is string of label , word is (is_positive_class, number)
-    returns: 
+    returns:
         waves: numpy matrix, each row represents a wave, each column represents a time sample
         samples: the sample rate of waves
         true_list: whether the wave is positive class
@@ -54,7 +54,7 @@ def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
 def get_data_list_weighted_npy(dataset_path: str, label_dict: dict,  is_train=True):
     '''
     label_dict : the key is string of label , word is (is_positive_class, number)
-    returns: 
+    returns:
         waves: numpy matrix, each row represents a wave, each column represents a time sample
         samples: the sample rate of waves
         true_list: whether the wave is positive class
@@ -85,8 +85,6 @@ def get_test_data_iter(num=None):
 
     for file in all_data:
         mfcc = np.load(file)
-        print(f'mfcc.shape = {mfcc.shape}')
-
         label_path = file[0:-3] + 'txt'
         txtfile = open(label_path, 'r')
         true_class = [x.strip() for x in txtfile]
@@ -115,7 +113,7 @@ def get_test_data_whole(num=None):
         txtfile = open(label_path, 'r')
         true_class = [x.strip() for x in txtfile]
         txtfile.close()
-        
+
         true_list.append(true_class)
     mfccs = np.array(mfccs)
     return mfccs, true_list
