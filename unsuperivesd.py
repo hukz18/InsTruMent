@@ -102,9 +102,8 @@ def get_tsne():
             else:
                 label_dict[j] = (False,0)
         mfcc,true = dataset.get_data_list_weighted_npy('./dataset/IRMAS-TrainingData',label_dict)
-        mfccs[label] = feature.get_feature_npy(mfcc) 
+        mfccs[label] = get_feature_tsne(mfcc) 
     
-    fea = []
     X = []
     y = []
     for label in labels:
@@ -137,6 +136,26 @@ def get_tsne():
             plt.plot(X_tsne[i,0],X_tsne[i,1],'purple')
     plt.show()
     return X_tsne,y
+
+def get_feature_tsne(mfccs):
+    '''
+    input:
+        mfccs : N * F * L , a set of mfccs
+    return:
+        mfcc_result : N * F
+    '''
+    freq_sum = np.sum(mfccs, axis=1)
+    # print(freq_sum)
+    sort_ind = np.argsort(freq_sum, axis=1)
+    # print(sort_ind)
+    sort_ind_ext = np.tile(sort_ind, (mfccs.shape[1], 1, 1))
+    sort_ind_ext = np.moveaxis(sort_ind_ext, 1, 0)
+    # print(sort_ind_ext)
+    result = np.take_along_axis(mfccs, sort_ind_ext, axis=2)
+    # print(result)
+    avg_max_result = np.mean(result[:, :, 50:], axis=2)
+    # print(avg_max_result)
+    return avg_max_result
 
 if __name__ == '__main__':
     get_tsne()
