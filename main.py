@@ -14,7 +14,7 @@ import numpy as np
     gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './dataset/IRMAS-TrainingData'
+dataset_path = './IRMAS-TestingData-Part1'
 is_gen_mfcc = False
 
 if is_gen_mfcc:
@@ -26,16 +26,23 @@ if __name__ == '__main__':
               'pia', 'sax', 'tru', 'vio', 'voi']  # 需要识别的乐器
     svm_classifiers = SVM()
 
+    mfccs, label_list = get_test_data_whole(dataset_path)
+    print(f'mfccs = {mfccs.shape}')
+    result_mfcc = get_feature_npy(mfccs)
+    print(f'result mfccs = {result_mfcc.shape}')
+
     for label in labels:
         print('training:' + label)
-        label_dict = {l: (True, 500) if l == label else (False, 500) for l in labels}
-        # print(label_dict)
-        mfccs, lbs = get_data_list_weighted_npy(dataset_path, label_dict)
-        features = get_feature_npy(mfccs)
-        svm_classifiers.add_svm(features, lbs)
-        # svm_classifiers.add_svm(features, lbs)
+        # label_dict = {l: (True, 500) if l == label else (False, 500)
+        #               for l in labels}
+        # # print(label_dict)
+        # mfccs, lbs = get_data_list_weighted_npy(dataset_path, label_dict)
+        lbs = [True if label in l else False for l in label_list]
+        lbs = np.array(lbs)
+        print(f'lbs  = {lbs.shape}')
+        svm_classifiers.add_svm(result_mfcc, lbs)
     test_iter = get_test_data_iter()
-    svm_classifiers.evaluate(test_iter)
+    # svm_classifiers.evaluate(test_iter)
 
     # 无监督部分
 
