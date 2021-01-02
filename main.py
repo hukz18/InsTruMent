@@ -14,7 +14,7 @@ import numpy as np
     gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './IRMAS-TestingData-Part1'
+dataset_path = './dataset/IRMAS-TestingData-Part[2-3]'
 is_gen_mfcc = False
 
 if is_gen_mfcc:
@@ -22,29 +22,30 @@ if is_gen_mfcc:
 
 if __name__ == '__main__':
     # meta_labels=['wind','']
-    labels = ['cel', 'cla', 'flu', 'gac', 'gel', 'org',
-              'pia', 'sax', 'tru', 'vio', 'voi']  # 需要识别的乐器
+
     svm_classifiers = SVM()
 
     mfccs, label_list = get_test_data_whole(dataset_path)
-    print(f'mfccs = {mfccs.shape}')
-    result_mfcc, label_list = get_feature_npy(mfccs, label_list)
-    print(f'result mfccs = {result_mfcc.shape}')
 
-    for label in labels:
+    result_mfcc = get_feature_npy(mfccs)
+
+    #
+    # for labels in svm_classifiers.meta_labels:
+    #     lbs = np.array([True if np.any(np.in1d(np.array(labels), np.array(l))) else False for l in label_list])
+    #     svm_classifiers.add_meta_svm(result_mfcc, lbs)
+    #     sub_label_list, sub_result_mfcc = np.array(label_list)[lbs].tolist(), result_mfcc[lbs]
+    #     for label in labels:
+    #         print('training:' + label)
+    #         lbs = np.array([True if label in l else False for l in sub_label_list])
+    #         svm_classifiers.add_svm(sub_result_mfcc, lbs, label)
+
+    for label in svm_classifiers.labels:
         print('training:' + label)
-        # label_dict = {l: (True, 500) if l == label else (False, 500)
-        #               for l in labels}
-        # # print(label_dict)
-        # mfccs, lbs = get_data_list_weighted_npy(dataset_path, label_dict)
-        lbs = [True if label in l else False for l in label_list]
-        lbs = np.array(lbs)
-        print(f'lbs  = {lbs.shape}')
-        svm_classifiers.add_svm(result_mfcc, lbs)
+        lbs = np.array([True if label in l else False for l in label_list])
+        svm_classifiers.add_svm(result_mfcc, lbs, label)
     test_iter = get_test_data_iter()
     svm_classifiers.evaluate(test_iter)
 
-    # 无监督部分
 
     # 从文件读取mfcc 这个快一点，代码用的是上面那样的
 
