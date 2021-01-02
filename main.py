@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     mfccs, label_list = get_test_data_whole(dataset_path)
     print(f'mfccs = {mfccs.shape}')
-    result_mfcc = get_feature_npy(mfccs)
+    result_mfcc, label_list = get_feature_npy(mfccs, label_list)
     print(f'result mfccs = {result_mfcc.shape}')
 
     for label in labels:
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         print(f'lbs  = {lbs.shape}')
         svm_classifiers.add_svm(result_mfcc, lbs)
     test_iter = get_test_data_iter()
-    # svm_classifiers.evaluate(test_iter)
+    svm_classifiers.evaluate(test_iter)
 
     # 无监督部分
 

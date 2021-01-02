@@ -5,8 +5,15 @@ from glob import glob
 
 
 def generate_features(data_path):
-    all_files = glob(f'{data_path}/*/*.wav')
-    # print(all_files)
+    wav_files = glob(f'{data_path}/*/*.wav')
+    print(len(wav_files))
+    npy_files = glob(f'{data_path}/*/*.npy')
+    print(len(npy_files))
+    all_files = []
+    for w in wav_files:
+        if w.replace('wav', 'npy') not in npy_files:
+            all_files.append(w)
+    print(len(all_files))
     for file in all_files:
         print(file)
         w, s = librosa.load(file)
@@ -28,7 +35,7 @@ def get_feature(waves, samples):
     return mfccs
 
 
-def get_feature_npy(mfccs):
+def get_feature_npy(mfccs, label_list):
     '''
     input:
         mfccs : N * F * L , a set of mfccs
@@ -44,9 +51,17 @@ def get_feature_npy(mfccs):
     # print(sort_ind_ext)
     result = np.take_along_axis(mfccs, sort_ind_ext, axis=2)
     # print(result)
-    avg_max_result = np.mean(result[:, :, -200:], axis=2)
+    # avg_max_result = np.mean(result[:, :, -200:], axis=2)
+    select_num = 5
+    avg_max_result = result[:, :, -select_num:]
+    avg_max_result = np.moveaxis(avg_max_result, -1, -2)
+    avg_max_result = avg_max_result.reshape((-1, avg_max_result.shape[-1]))
     # print(avg_max_result)
-    return avg_max_result
+
+    labels = []
+    for l in label_list:
+        labels += [l] * select_num
+    return avg_max_result, labels
 
 
 # x = np.random.randint(0, 9, (3, 4, 5))
