@@ -92,11 +92,9 @@ def get_test_data_iter(num=None):
         yield mfcc, true_class
 
 
-def get_test_data_whole(num=None):
+def get_test_data_whole(dataset_path: str, num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
-
-    dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
-    all_data = glob(f'{dataset_path}/*.npy')
+    all_data = glob(f'{dataset_path}/*/*.npy')
     # 打乱
     shuffle(all_data)
     if num is not None:
@@ -106,7 +104,8 @@ def get_test_data_whole(num=None):
     true_list = []
     for file in all_data:
         mfcc = np.load(file)
-        print(f'mfcc.shape = {mfcc.shape}')
+        # print(f'mfcc.shape = {mfcc.shape}')
+        mfcc = np.hstack((mfcc, np.zeros((mfcc.shape[0], 862-mfcc.shape[1]))))
         mfccs.append(mfcc)
 
         label_path = file[0:-3] + 'txt'
@@ -120,5 +119,5 @@ def get_test_data_whole(num=None):
 
 
 if __name__ == '__main__':
-    for mfcc,true_class in get_test_data_whole():
+    for mfcc, true_class in get_test_data_whole():
         print(true_class)

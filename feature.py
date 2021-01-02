@@ -1,4 +1,5 @@
 import librosa
+from librosa.feature.spectral import mfcc
 import numpy as np
 from glob import glob
 
@@ -43,7 +44,7 @@ def get_feature_npy(mfccs):
     # print(sort_ind_ext)
     result = np.take_along_axis(mfccs, sort_ind_ext, axis=2)
     # print(result)
-    avg_max_result = np.mean(result[:, :, 50:], axis=2)
+    avg_max_result = np.mean(result[:, :, -200:], axis=2)
     # print(avg_max_result)
     return avg_max_result
 
