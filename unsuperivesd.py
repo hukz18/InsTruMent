@@ -7,6 +7,8 @@ import warnings
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import AgglomerativeClustering
 from sklearn import manifold
+import dataset
+import feature
 
 
 def pca_plot(X):  # 画PCA的拐点图，差不多选前3个或者前2的变量没啥问题
@@ -87,11 +89,54 @@ def t_SNE2(X):
 
 
 def get_tsne():
-    """
-    获取数据点的tsne聚类
-    :return: 聚类后各点的坐标
-    TODO:带标签聚类并可视化
-    """
-    X = np.loadtxt("read_mfcc.txt", dtype=int, delimiter=" ")
-    X_tsne = unsuperivesd.t_SNE2(X)
-    return X_tsne
+    labels = ['cel', 'cla', 'flu', 'gac', 'gel', 'org', 'pia', 'sax', 'tru', 'vio', 'voi']  # 需要识别的乐器
+    mfccs = {}
+
+    for i in range(11):
+        label = labels[i]
+        label_dict = {}
+        for ii in range(11):
+            j = labels[ii]
+            if (j == label):
+                label_dict[j] = (True,500)
+            else:
+                label_dict[j] = (False,0)
+        mfcc,true = dataset.get_data_list_weighted_npy('./dataset/IRMAS-TrainingData',label_dict)
+        mfccs[label] = feature.get_feature_npy(mfcc) 
+    
+    fea = []
+    X = []
+    y = []
+    for label in labels:
+        X += mfccs[label].tolist()
+        y += [label]*500
+    X_tsne = t_SNE2(X)
+
+    for i in range(len(X)):
+        if y[i] == labels[0]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'r')
+        elif y[i] == labels[1]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'y')
+        elif y[i] == labels[2]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'g')
+        elif y[i] == labels[3]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'b')
+        elif y[i] == labels[4]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'k')
+        elif y[i] == labels[5]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'p')
+        elif y[i] == labels[6]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'m')
+        elif y[i] == labels[7]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'c')
+        elif y[i] == labels[8]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'peachpuff')
+        elif y[i] == labels[9]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'crimson')
+        elif y[i] == labels[10]:
+            plt.plot(X_tsne[i,0],X_tsne[i,1],'purple')
+    plt.show()
+    return X_tsne,y
+
+if __name__ == '__main__':
+    get_tsne()
