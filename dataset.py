@@ -96,7 +96,7 @@ def get_test_data_whole(dataset_path: str, num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
     all_data = glob(f'{dataset_path}/*/*.npy')
     # 打乱
-    shuffle(all_data)
+    # shuffle(all_data)
     if num is not None:
         all_data = all_data[:num]
 

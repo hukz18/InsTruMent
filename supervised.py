@@ -14,61 +14,63 @@ class SVM:
         self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
                        'org', 'pia', 'sax', 'tru', 'vio', 'voi']
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
-        self.meta_labels = {}
-        self.discriminators = []
+        self.meta_labels = [['gel', 'pia', 'voi'], ['cel', 'cla', 'flu', 'gac', 'org', 'sax', 'tru', 'vio']]
+        self.discriminators = {}
         self.meta_discriminators = []
         self.class_num = 11
-        self.meta_class_num = 4
+        self.meta_class_num = 2
         # self.meta_labels = []
         # self.meta_classifiers = []
 
-    def add_meta_svm(self, labels):
-        waves, samples, labels = get_data_list(labels, 2000, 0.5)
-        features = get_feature(waves, samples)
-        meta_svm = train_svm(features, labels)
-        self.meta_discriminators.append(meta_svm)
-
-    def add_svm(self, features, labels):
+    def add_meta_svm(self, features, labels):
         sub_svm = train_svm(features, labels)
-        self.discriminators.append(sub_svm)
+        self.meta_discriminators.append(sub_svm)
 
-    def predict_meta(self, wave, sample):
-        wave = wave[np.newaxis, :]
-        sample = sample[np.newaxis]
-        feature = get_feature(wave, sample)
-        feature = np.mean(feature, axis=2)
+    def add_svm(self, features, labels, label):
+        sub_svm = train_svm(features, labels)
+        self.discriminators[label] = sub_svm
+
+    def predict_meta(self, mfcc):
+        mfcc = mfcc[np.newaxis, :]
+        feature = get_feature_npy(mfcc)
         result = np.zeros(self.meta_class_num)
         for i in range(self.meta_class_num):
             result[i] = self.meta_discriminators[i].predict(feature)
         return result
 
-    def predict_whole(self, wave, sample):
-        num_item = np.shape(wave, 0)
+    def predict_whole(self, mfccs):
+        num_item = np.shape(mfccs, 0)
         result = np.zeros(num_item, self.class_num)
-        feature = np.mean(get_feature(wave, sample), axis=2)
-        for i in range(self.class_num):
-            result[:, i] = self.discriminators[i].predict(feature)
+        feature = get_feature_npy(mfccs)
+        for label in self.labels:
+            result[:, self.label_to_idx[label]] = self.discriminators[label].predict(feature)
         return result
 
     def predict_one(self, mfcc, meta_label=None):
+        labels = []
+        if meta_label is None:
+            labels = self.labels
+        else:
+            for i in range(self.meta_class_num):
+                labels += self.meta_labels[i] if meta_label[i] else []
         mfcc = mfcc[np.newaxis, :]
         result = np.zeros(self.class_num)
         feature = get_feature_npy(mfcc)
-        for i in range(self.class_num):
-            result[i] = self.discriminators[i].predict(feature)
+        for label in labels:
+            result[self.label_to_idx[label]] = self.discriminators[label].predict(feature)
         return result
 
     def evaluate(self, test_iter):
         true_labels, predict_labels = [], []
         for mfcc, labels in tqdm(test_iter):
             true_label = np.zeros(self.class_num)
-            # meta_label = self.predict_one(wave, sample)
-            # meta_label = np.where(meta_label)[0].tolist()  # 含有哪些基类
+            # meta_label = self.predict_meta(mfcc)
+            meta_label = None
             for label in labels:
                 true_label[self.label_to_idx[label]] = True
             true_labels.append(true_label)
             # predict_labels.append(self.predict_one(mfcc, meta_label))
-            predict_labels.append(self.predict_one(mfcc))
+            predict_labels.append(self.predict_one(mfcc, meta_label))
         predict_labels = np.array(predict_labels)
         true_labels = np.array(true_labels)
         print(accuracy_score(true_labels, predict_labels))
@@ -97,8 +99,8 @@ def train_svm(X, Y):
     svm_classifier.fit(X_train, Y_train)
     predicted_train = svm_classifier.predict(X_train)
     predicted_test = svm_classifier.predict(X_test)
-    print(accuracy_score(predicted_train, Y_train))
-    print(accuracy_score(predicted_test, Y_test))
+    print('train acc:%.2f, test acc:%.2f' % (
+        accuracy_score(predicted_train, Y_train), accuracy_score(predicted_test, Y_test)))
     return svm_classifier
 
 
