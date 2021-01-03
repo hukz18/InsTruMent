@@ -14,19 +14,17 @@ import numpy as np
     gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './dataset/IRMAS-TestingData-Part[2-3]'
+dataset_path = './dataset/TrainingData'
 is_gen_mfcc = False
-
+is_gen_dataset = False
+if is_gen_dataset:
+    generate_dataset(dataset_path, 3)
 if is_gen_mfcc:
     generate_features(dataset_path)
 
 if __name__ == '__main__':
-    # meta_labels=['wind','']
-
     svm_classifiers = SVM()
-
     mfccs, label_list = get_test_data_whole(dataset_path)
-
     result_mfcc = get_feature_npy(mfccs)
 
     #

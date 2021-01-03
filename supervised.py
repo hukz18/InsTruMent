@@ -5,16 +5,16 @@ import matplotlib.pyplot as plt
 from feature import get_feature_npy
 from evaluation import *
 from dataset import get_data_list_weighted
-from sklearn.metrics import accuracy_score, recall_score, precision_score
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 class SVM:
     def __init__(self):
         self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
-                       'org', 'pia', 'sax', 'tru', 'vio', 'voi']
+                       'org', 'pia', 'sax', 'tru', 'vio']
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
-        self.meta_labels = [['gel', 'pia', 'voi'], ['cel', 'cla', 'flu', 'gac', 'org', 'sax', 'tru', 'vio']]
+        self.meta_labels = [['gel', 'pia'], ['cel', 'cla', 'flu', 'gac', 'org', 'sax', 'tru', 'vio']]
         self.discriminators = {}
         self.meta_discriminators = []
         self.class_num = 11
@@ -73,7 +73,10 @@ class SVM:
             predict_labels.append(self.predict_one(mfcc, meta_label))
         predict_labels = np.array(predict_labels)
         true_labels = np.array(true_labels)
-        print(accuracy_score(true_labels, predict_labels))
+        print('accuracy score: %.3f' % accuracy_score(true_labels, predict_labels))
+        print('recall score: %.3f' % recall_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
+        print('precision score: %.3f' % precision_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
+        print('f1 score: %.3f' % f1_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
         confusion = co_est_mat(np.mat(true_labels), np.mat(predict_labels))
         plt.matshow(confusion)
         plt.show()

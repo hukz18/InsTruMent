@@ -2,6 +2,7 @@ import librosa
 from librosa.feature.spectral import mfcc
 import numpy as np
 from glob import glob
+import shutil
 
 
 def generate_features(data_path):
@@ -14,6 +15,20 @@ def generate_features(data_path):
         print(mfcc.shape)
         np.save(file.replace('wav', 'npy'), mfcc)
         # break
+
+
+def generate_dataset(data_path, num):
+    all_files = glob(f'{data_path}/*/*.npy')
+    for file in all_files:
+        file = file.replace(f'\\', '/')
+        with open(file.replace('npy', 'txt'), 'r') as txtfile:
+            true_class = [x.strip() for x in txtfile]
+        if 'voi' in true_class:
+            continue
+        is_test = 'TestingData' if np.random.random() > 0.7 else 'TrainingData'
+        copy_file = file.replace('IRMAS-TestingData-Part%d' % num, is_test).replace('Part%d' % num, '')
+        shutil.copyfile(file, copy_file)
+        shutil.copyfile(file.replace('npy', 'txt'), copy_file.replace('npy', 'txt'))
 
 
 def get_feature(waves, samples):
@@ -47,7 +62,6 @@ def get_feature_npy(mfccs):
     avg_max_result = np.mean(result[:, :, -200:], axis=2)
     # print(avg_max_result)
     return avg_max_result
-
 
 # x = np.random.randint(0, 9, (3, 4, 5))
 # print(x)

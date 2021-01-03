@@ -76,7 +76,7 @@ def get_data_list_weighted_npy(dataset_path: str, label_dict: dict,  is_train=Tr
 def get_test_data_iter(num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
 
-    dataset_path = './dataset/IRMAS-TestingData-Part1/Part1'
+    dataset_path = './dataset/TestingData'
     all_data = glob(f'{dataset_path}/*.npy')
     # 打乱
     shuffle(all_data)
@@ -94,7 +94,7 @@ def get_test_data_iter(num=None):
 
 def get_test_data_whole(dataset_path: str, num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
-    all_data = glob(f'{dataset_path}/*/*.npy')
+    all_data = glob(f'{dataset_path}/*.npy')
     # 打乱
     # shuffle(all_data)
     if num is not None:
