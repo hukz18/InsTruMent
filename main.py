@@ -1,6 +1,6 @@
 from dataset import *
 from feature import *
-from supervised import SVM
+from supervised import ML_Classifier
 import unsuperivesd
 import numpy as np
 
@@ -18,32 +18,32 @@ dataset_path = './dataset/TrainingData'
 is_gen_mfcc = False
 is_gen_dataset = False
 if is_gen_dataset:
-    generate_dataset(dataset_path, 3)
+    for i in range(1, 4):
+        generate_dataset('./dataset/IRMAS-TestingData-Part%d' % i, i)
 if is_gen_mfcc:
     generate_features(dataset_path)
 
 if __name__ == '__main__':
-    svm_classifiers = SVM()
+    ml_classifier = ML_Classifier('SVM') # use 'SVM', 'RF', or 'XGB'
     mfccs, label_list = get_test_data_whole(dataset_path)
     result_mfcc = get_feature_npy(mfccs)
 
-    #
-    # for labels in svm_classifiers.meta_labels:
+    # for labels in ml_classifier.meta_labels:
     #     lbs = np.array([True if np.any(np.in1d(np.array(labels), np.array(l))) else False for l in label_list])
-    #     svm_classifiers.add_meta_svm(result_mfcc, lbs)
+    #     ml_classifier.add_meta_clf(result_mfcc, lbs)
     #     sub_label_list, sub_result_mfcc = np.array(label_list)[lbs].tolist(), result_mfcc[lbs]
-    #     for label in labels:
-    #         print('training:' + label)
-    #         lbs = np.array([True if label in l else False for l in sub_label_list])
-    #         svm_classifiers.add_svm(sub_result_mfcc, lbs, label)
+    #     if len(labels) > 1:
+    #         for label in labels:
+    #             print('training:' + label)
+    #             lbs = np.array([True if label in l else False for l in sub_label_list])
+    #             ml_classifier.add_clf(sub_result_mfcc, lbs, label)
 
-    for label in svm_classifiers.labels:
+    for label in ml_classifier.labels:
         print('training:' + label)
         lbs = np.array([True if label in l else False for l in label_list])
-        svm_classifiers.add_svm(result_mfcc, lbs, label)
+        ml_classifier.add_clf(result_mfcc, lbs, label)
     test_iter = get_test_data_iter()
-    svm_classifiers.evaluate(test_iter)
-
+    ml_classifier.evaluate(test_iter)
 
     # 从文件读取mfcc 这个快一点，代码用的是上面那样的
 
@@ -51,6 +51,6 @@ if __name__ == '__main__':
     # Y_predict = unsuperivesd.hierarchical_predict(X,n_centers=11,linkage="average") #撒豆子警告
     # count_martix = unsuperivesd.outcome_print(Y_predict,labels,n_count=100)
     # unsuperivesd.pca_plot(X)
-    # X_new =unsuperivesd.pca_decomposition(X,3,labels,100,1) # PCA降维
+    # X_new = unsuperivesd.pca_decomposition(X,3,labels,100,1) # PCA降维
 
     # 试了一下t-SNE
