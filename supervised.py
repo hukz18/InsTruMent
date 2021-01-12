@@ -1,34 +1,51 @@
+import seaborn
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from sklearn import svm
 import matplotlib.pyplot as plt
 from feature import get_feature_npy
 from evaluation import *
 from dataset import get_data_list_weighted
+from xgboost.sklearn import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 
 
-class SVM:
-    def __init__(self):
+class ML_Classifier:
+    def __init__(self, clf_type):
         self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
                        'org', 'pia', 'sax', 'tru', 'vio']
+        self.clf_type = clf_type
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
-        self.meta_labels = [['gel', 'pia'], ['cel', 'cla', 'flu', 'gac', 'org', 'sax', 'tru', 'vio']]
+        self.meta_labels = [['pia', 'gel'], ['sax', 'org', 'cel', 'cla', 'flu', 'gac', 'vio', 'tru']]
         self.discriminators = {}
         self.meta_discriminators = []
-        self.class_num = 11
+        self.class_num = 10
         self.meta_class_num = 2
-        # self.meta_labels = []
-        # self.meta_classifiers = []
 
-    def add_meta_svm(self, features, labels):
-        sub_svm = train_svm(features, labels)
-        self.meta_discriminators.append(sub_svm)
+    def add_meta_clf(self, features, labels):
+        if self.clf_type == 'SVM':
+            sub_clf = train_SVM(features, labels)
+        elif self.clf_type == 'RF':
+            sub_clf = train_RF(features, labels)
+        elif self.clf_type == 'XGB':
+            sub_clf = train_XGB(features, labels)
+        else:
+            raise ValueError('choose clf_type from SVM, RF(random forest), or XGB(XGBoost)')
+        self.meta_discriminators.append(sub_clf)
 
-    def add_svm(self, features, labels, label):
-        sub_svm = train_svm(features, labels)
-        self.discriminators[label] = sub_svm
+    def add_clf(self, features, labels, label):
+        if self.clf_type == 'SVM':
+            sub_clf = train_SVM(features, labels)
+        elif self.clf_type == 'RF':
+            sub_clf = train_RF(features, labels)
+        elif self.clf_type == 'XGB':
+            sub_clf = train_XGB(features, labels)
+        else:
+            raise ValueError('choose clf_type from SVM, RF(random forest), or XGB(XGBoost)')
+        self.discriminators[label] = sub_clf
 
     def predict_meta(self, mfcc):
         mfcc = mfcc[np.newaxis, :]
@@ -48,7 +65,7 @@ class SVM:
 
     def predict_one(self, mfcc, meta_label=None):
         labels = []
-        if meta_label is None:
+        if not len(self.meta_discriminators):
             labels = self.labels
         else:
             for i in range(self.meta_class_num):
@@ -78,22 +95,23 @@ class SVM:
         print('precision score: %.3f' % precision_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
         print('f1 score: %.3f' % f1_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
         confusion = co_est_mat(np.mat(true_labels), np.mat(predict_labels))
-        plt.matshow(confusion)
+        confusion = pd.DataFrame(confusion, columns=self.labels, index=self.labels)
+        seaborn.heatmap(confusion, annot=True)
         plt.show()
 
 
 def svm_param_select(X, Y, n_folds=3):
     # Cs = [0.01, 0.1, 1, 10]
-    Cs = [5, 10, 20, 50]
-    gammas = ['scale', 'auto', 0.0001, 0.005, 0.001]
-    kernels = ['rbf', 'sigmoid']
+    Cs = [10, 20, 50, 100, 200]
+    gammas = ['scale', 0.0003, 0.0001, 0.0005, 0.0008, 0.001]
+    kernels = ['rbf']
     param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels}
     grid_search = GridSearchCV(svm.SVC(), param_grid, cv=n_folds)
     grid_search.fit(X, Y)
     return grid_search.best_params_
 
 
-def train_svm(X, Y):
+def train_SVM(X, Y):
     # X = np.mean(X, axis=2)
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
     param = svm_param_select(X_train, Y_train)
@@ -107,27 +125,47 @@ def train_svm(X, Y):
     return svm_classifier
 
 
-def RF_train(X, Y):
+def RF_param_select(X, Y, n_folds=3):
+    criterion = ['gini', 'entropy']
+    n_estimators = [20, 50, 100, 200]
+    max_depth = [15, 18, 21]
+    param_grid = {'n_estimators': n_estimators, 'criterion': criterion, 'max_depth': max_depth}
+    grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=n_folds)
+    grid_search.fit(X, Y)
+    return grid_search.best_params_
+
+
+def train_RF(X, Y):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-    RF_classifier = RandomForestClassifier(
-        n_estimators=500, random_state=1993, max_depth=18)
-    RF_classifier.fit(X_train, y_train)
+    param = RF_param_select(X_train, Y_train)
+    print(param)
+    RF_classifier = RandomForestClassifier(n_jobs=-1, **param)
+    RF_classifier.fit(X_train, y=Y_train)
     predicted_train = RF_classifier.predict(X_train)
-    predicted_test = RF_classifier.predict(Y_train)
-    print(accuracy_score(predicted_train, Y_train))
-    print(accuracy_score(predicted_test, Y_test))
-    print(accuracy_score(X_train, Y_train))
-    print(accuracy_score(X_test, Y_test))
+    predicted_test = RF_classifier.predict(X_test)
+    print('train acc:%.2f, test acc:%.2f' % (
+        accuracy_score(predicted_train, Y_train), accuracy_score(predicted_test, Y_test)))
+    return RF_classifier
 
 
-def XGB_train(X, Y):
+def XGB_param_select(X, Y, n_folds=3):
+    n_estimators = [100, 300, 500]
+    max_depth = [50, 70, 90]
+    min_child_weight = [1, 1.5, 2]
+    param_grid = {'n_estimators': n_estimators, 'max_depth': max_depth, 'min_child_weight': min_child_weight}
+    grid_search = GridSearchCV(XGBClassifier(), param_grid, cv=n_folds)
+    grid_search.fit(X, Y)
+    return grid_search.best_params_
+
+
+def train_XGB(X, Y):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
-    XGB_classifier = XGBClassifier(
-        n_estimators=300, max_depth=70, learning_rate=1)
-    XGB_classifier.fit(X_train, y_train)
+    param = XGB_param_select(X_train, Y_train)
+    print(param)
+    XGB_classifier = XGBClassifier(verbosity=1, learning_rate=1, **param)
+    XGB_classifier.fit(X_train, Y_train)
     predicted_train = XGB_classifier.predict(X_train)
-    predicted_test = XGB_classifier.predict(Y_train)
-    print(accuracy_score(predicted_train, Y_train))
-    print(accuracy_score(predicted_test, Y_test))
-    print(accuracy_score(X_train, Y_train))
-    print(accuracy_score(X_test, Y_test))
+    predicted_test = XGB_classifier.predict(X_test)
+    print('train acc:%.2f, test acc:%.2f' % (
+        accuracy_score(predicted_train, Y_train), accuracy_score(predicted_test, Y_test)))
+    return XGB_classifier

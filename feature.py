@@ -25,7 +25,7 @@ def generate_dataset(data_path, num):
             true_class = [x.strip() for x in txtfile]
         if 'voi' in true_class:
             continue
-        is_test = 'TestingData' if np.random.random() > 0.7 else 'TrainingData'
+        is_test = 'TestingData' if np.random.random() > 0.8 else 'TrainingData'
         copy_file = file.replace('IRMAS-TestingData-Part%d' % num, is_test).replace('Part%d' % num, '')
         shutil.copyfile(file, copy_file)
         shutil.copyfile(file.replace('npy', 'txt'), copy_file.replace('npy', 'txt'))
