@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from feature import get_feature_npy
 from evaluation import *
 from dataset import get_data_list_weighted
-from xgboost.sklearn import XGBClassifier
+#from xgboost.sklearn import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, r2_score, mean_absolute_error
 from sklearn.model_selection import GridSearchCV, train_test_split

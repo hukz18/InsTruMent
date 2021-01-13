@@ -14,18 +14,25 @@ def sample_multiple(l: list, num: int):
     return result
 
 
-def get_file_list(dataset_path: str, label_dict: dict, file_type: str,  is_train=True):
+def get_file_list(dataset_path: str, label_dict: dict, file_type: str,  is_train=True,num=0):
     true_list = []
     all_file = []
-    for label, (is_pos, num) in label_dict.items():
-        assert type(is_pos) is bool
-        all_file += sample_multiple(
-            glob(f'{dataset_path}/{label}/*.{file_type}'), num)
-        true_list += [is_pos] * num
+    if num ==1 or num==2:
+        for label, (is_pos, num) in label_dict.items():
+            assert type(is_pos) is bool
+            all_file += sample_multiple(
+                glob(f'{dataset_path}/{label}/*({num}).{file_type}'), num)
+            true_list += [is_pos] * num
+    else:
+        for label, (is_pos, num) in label_dict.items():
+            assert type(is_pos) is bool
+            all_file += sample_multiple(
+                glob(f'{dataset_path}/{label}/*.{file_type}'), num)
+            true_list += [is_pos] * num
     return all_file, true_list
 
 
-def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
+def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True,num=0):
     '''
     label_dict : the key is string of label , word is (is_positive_class, number)
     returns:
@@ -34,7 +41,7 @@ def get_data_list_weighted(dataset_path: str, label_dict: dict,  is_train=True):
         true_list: whether the wave is positive class
     '''
     all_file, true_list = get_file_list(
-        dataset_path, label_dict, file_type='wav', is_train=is_train)
+        dataset_path, label_dict, file_type='wav', is_train=is_train,num=num)
     waves = []
     samples = []
     for file in all_file:

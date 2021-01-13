@@ -19,7 +19,7 @@ import pickle
 '''
 
 dataset_path = './IRMAS-TestingData-Part[1]'
-is_gen_mfcc = False
+is_gen_mfcc = True
 is_gen_dataset = False
 is_delete_npy = False
 
