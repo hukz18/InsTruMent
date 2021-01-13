@@ -94,7 +94,7 @@ def get_test_data_iter(num=None):
 
 def get_test_data_whole(dataset_path: str, num=None):
     # 读取测试集wave和sample，还有标签，返回迭代器
-    all_data = glob(f'{dataset_path}/*.npy')
+    all_data = glob(f'{dataset_path}/*/*.npy')
     # 打乱
     # shuffle(all_data)
     if num is not None:
@@ -104,11 +104,12 @@ def get_test_data_whole(dataset_path: str, num=None):
     true_list = []
     for file in all_data:
         mfcc = np.load(file)
-        # print(f'mfcc.shape = {mfcc.shape}')
-        mfcc = np.hstack((mfcc, np.zeros((mfcc.shape[0], 862-mfcc.shape[1]))))
+        print(f'mfcc.shape = {mfcc.shape}')
+        mfcc = np.hstack(
+            (mfcc, np.zeros((mfcc.shape[0], 1723-mfcc.shape[1]))))
         mfccs.append(mfcc)
 
-        label_path = file[0:-3] + 'txt'
+        label_path = file[0:-7] + '.txt'
         txtfile = open(label_path, 'r')
         true_class = [x.strip() for x in txtfile]
         txtfile.close()

@@ -3,40 +3,54 @@ from feature import *
 from supervised import ML_Classifier
 import unsuperivesd
 import numpy as np
+import os
+# from torchaudio.transforms import MFCC
+import torch
 
 '''
-    Annotations: The annotation of the predominant instrument of
-    each excerpt is both in the name of the containing folder,
-    and in the file name: cello (cel), clarinet (cla), flute (flu),
-    acoustic guitar (gac), electric guitar (gel), organ (org), piano (pia),
-    saxophone (sax), trumpet (tru), violin (vio), and human singing voice (voi).
-    The number of files per instrument are: cel(388), cla(505), flu(451),
-    gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
+	Annotations: The annotation of the predominant instrument of
+	each excerpt is both in the name of the containing folder,
+	and in the file name: cello (cel), clarinet (cla), flute (flu),
+	acoustic guitar (gac), electric guitar (gel), organ (org), piano (pia),
+	saxophone (sax), trumpet (tru), violin (vio), and human singing voice (voi).
+	The number of files per instrument are: cel(388), cla(505), flu(451),
+	gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './dataset/TrainingData'
+dataset_path = './IRMAS-TestingData-Part[1]'
 is_gen_mfcc = False
 is_gen_dataset = False
+is_delete_npy = False
+
+if is_delete_npy:
+    npy_file = glob(f'{dataset_path}/*/*.npy')
+    for file in npy_file:
+        print(f'remove file {file}')
+        os.remove(file)
+    exit(0)
+
 if is_gen_dataset:
     for i in range(1, 4):
-        generate_dataset('./dataset/IRMAS-TestingData-Part%d' % i, i)
+        generate_dataset(f'./IRMAS-TestingData-Part{i}', i)
+    exit(0)
 if is_gen_mfcc:
     generate_features(dataset_path)
+    exit(0)
 
 if __name__ == '__main__':
-    ml_classifier = ML_Classifier('SVM') # use 'SVM', 'RF', or 'XGB'
+    ml_classifier = ML_Classifier('SVM')  # use 'SVM', 'RF', or 'XGB'
     mfccs, label_list = get_test_data_whole(dataset_path)
     result_mfcc = get_feature_npy(mfccs)
 
     # for labels in ml_classifier.meta_labels:
-    #     lbs = np.array([True if np.any(np.in1d(np.array(labels), np.array(l))) else False for l in label_list])
-    #     ml_classifier.add_meta_clf(result_mfcc, lbs)
-    #     sub_label_list, sub_result_mfcc = np.array(label_list)[lbs].tolist(), result_mfcc[lbs]
-    #     if len(labels) > 1:
-    #         for label in labels:
-    #             print('training:' + label)
-    #             lbs = np.array([True if label in l else False for l in sub_label_list])
-    #             ml_classifier.add_clf(sub_result_mfcc, lbs, label)
+    #	 lbs = np.array([True if np.any(np.in1d(np.array(labels), np.array(l))) else False for l in label_list])
+    #	 ml_classifier.add_meta_clf(result_mfcc, lbs)
+    #	 sub_label_list, sub_result_mfcc = np.array(label_list)[lbs].tolist(), result_mfcc[lbs]
+    #	 if len(labels) > 1:
+    #		 for label in labels:
+    #			 print('training:' + label)
+    #			 lbs = np.array([True if label in l else False for l in sub_label_list])
+    #			 ml_classifier.add_clf(sub_result_mfcc, lbs, label)
 
     for label in ml_classifier.labels:
         print('training:' + label)

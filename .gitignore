@@ -2,6 +2,7 @@
 *.zip
 *.pdf
 IRMAS*
+*Data
 
 
 # Byte-compiled / optimized / DLL files
