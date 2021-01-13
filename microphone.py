@@ -26,7 +26,7 @@ def Monitor_MIC(filename):
     print("detected a signal")
     less = []
     frames2 = []
-    for ti in range(60):
+    for ti in range(30):
         for i in range(0, 31):
             data2 = stream.read(CHUNK)
             frames2.append(data2)
