@@ -3,27 +3,40 @@ from feature import *
 from supervised import ML_Classifier, ML_Regressor
 import unsuperivesd
 import numpy as np
+import os
+# from torchaudio.transforms import MFCC
+import torch
 import pickle
 
 '''
-    Annotations: The annotation of the predominant instrument of
-    each excerpt is both in the name of the containing folder,
-    and in the file name: cello (cel), clarinet (cla), flute (flu),
-    acoustic guitar (gac), electric guitar (gel), organ (org), piano (pia),
-    saxophone (sax), trumpet (tru), violin (vio), and human singing voice (voi).
-    The number of files per instrument are: cel(388), cla(505), flu(451),
-    gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
+	Annotations: The annotation of the predominant instrument of
+	each excerpt is both in the name of the containing folder,
+	and in the file name: cello (cel), clarinet (cla), flute (flu),
+	acoustic guitar (gac), electric guitar (gel), organ (org), piano (pia),
+	saxophone (sax), trumpet (tru), violin (vio), and human singing voice (voi).
+	The number of files per instrument are: cel(388), cla(505), flu(451),
+	gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './dataset/TrainingData'
+dataset_path = './IRMAS-TestingData-Part[1]'
 is_gen_mfcc = False
 is_gen_dataset = False
+is_delete_npy = False
+
+if is_delete_npy:
+    npy_file = glob(f'{dataset_path}/*/*.npy')
+    for file in npy_file:
+        print(f'remove file {file}')
+        os.remove(file)
+    exit(0)
+
 if is_gen_dataset:
     for i in range(1, 4):
-        generate_dataset('./dataset/IRMAS-TestingData-Part%d' % i, i)
+        generate_dataset(f'./IRMAS-TestingData-Part{i}', i)
+    exit(0)
 if is_gen_mfcc:
     generate_features(dataset_path)
-
+    exit(0)
 
 def train_classifier():  # 使用单层判别器训练
     ml_classifier = ML_Classifier('SVM')  # use 'SVM', 'RF', or 'XGB'

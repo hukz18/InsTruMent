@@ -3,6 +3,7 @@ from librosa.feature.spectral import mfcc
 import numpy as np
 from glob import glob
 import shutil
+from scipy.io import wavfile
 
 
 def generate_features(data_path):
@@ -10,25 +11,33 @@ def generate_features(data_path):
     # print(all_files)
     for file in all_files:
         print(file)
-        w, s = librosa.load(file)
-        mfcc = librosa.feature.mfcc(y=w, sr=s, n_mfcc=40)
-        print(mfcc.shape)
-        np.save(file.replace('wav', 'npy'), mfcc)
+        s, w = wavfile.read(file)
+        w = w.astype(float)
+        mfcc1 = librosa.feature.mfcc(y=w[:, 0], sr=s, n_mfcc=40)
+        mfcc2 = librosa.feature.mfcc(y=w[:, 1], sr=s, n_mfcc=40)
+        print(mfcc1.shape)
+        np.save(file.replace('.wav', '(1).npy'), mfcc1)
+        np.save(file.replace('.wav', '(2).npy'), mfcc2)
         # break
 
 
 def generate_dataset(data_path, num):
-    all_files = glob(f'{data_path}/*/*.npy')
+    all_files = glob(f'{data_path}/*/*.txt')
     for file in all_files:
+        print(file)
         file = file.replace(f'\\', '/')
-        with open(file.replace('npy', 'txt'), 'r') as txtfile:
+        with open(file, 'r') as txtfile:
             true_class = [x.strip() for x in txtfile]
         if 'voi' in true_class:
             continue
         is_test = 'TestingData' if np.random.random() > 0.8 else 'TrainingData'
-        copy_file = file.replace('IRMAS-TestingData-Part%d' % num, is_test).replace('Part%d' % num, '')
+        copy_file = file.replace(
+            f'IRMAS-TestingData-Part{num}', is_test).replace(f'Part{num}/', '')
         shutil.copyfile(file, copy_file)
-        shutil.copyfile(file.replace('npy', 'txt'), copy_file.replace('npy', 'txt'))
+        shutil.copyfile(file.replace('.txt', '(1).npy'),
+                        copy_file.replace('.txt', '(1).npy'))
+        shutil.copyfile(file.replace('.txt', '(2).npy'),
+                        copy_file.replace('.txt', '(2).npy'))
 
 
 def get_feature(waves, samples):
