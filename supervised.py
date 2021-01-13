@@ -9,7 +9,7 @@ from evaluation import *
 from dataset import get_data_list_weighted
 from xgboost.sklearn import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, r2_score, mean_absolute_error
 from sklearn.model_selection import GridSearchCV, train_test_split
 
 
@@ -100,12 +100,84 @@ class ML_Classifier:
         plt.show()
 
 
+class ML_Regressor:
+    def __init__(self):
+        self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
+                       'org', 'pia', 'sax', 'tru', 'vio']
+        self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
+        self.thresholds = np.array([0] * 10)
+        self.regressors = {}
+        self.class_num = 10
+
+    def add_rgs(self, features, labels, label):
+        sub_rgs = train_SVR(features, labels)
+        self.regressors[label] = sub_rgs
+
+    def predict_one(self, mfcc):
+        mfcc = mfcc[np.newaxis, :]
+        result = np.zeros(self.class_num)
+        feature = get_feature_npy(mfcc)
+        for label in self.labels:
+            result[self.label_to_idx[label]] = self.regressors[label].predict(feature)
+        return result > self.thresholds
+
+    def regress_one(self, mfcc):
+        mfcc = mfcc[np.newaxis, :]
+        result = np.zeros(self.class_num)
+        feature = get_feature_npy(mfcc)
+        for label in self.labels:
+            result[self.label_to_idx[label]] = self.regressors[label].predict(feature)
+        return result
+
+    def evaluate(self, test_iter):
+        true_labels, predict_labels = [], []
+        for mfcc, labels in tqdm(test_iter):
+            true_label = np.zeros(self.class_num)
+            for label in labels:
+                true_label[self.label_to_idx[label]] = True
+            true_labels.append(true_label)
+            predict_labels.append(self.predict_one(mfcc))
+        predict_labels = np.array(predict_labels)
+        true_labels = np.array(true_labels)
+        print('accuracy score: %.3f' % accuracy_score(true_labels, predict_labels))
+        print('recall score: %.3f' % recall_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
+        print('precision score: %.3f' % precision_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
+        print('f1 score: %.3f' % f1_score(true_labels.reshape(-1, 1), predict_labels.reshape(-1, 1)))
+        confusion = co_est_mat(np.mat(true_labels), np.mat(predict_labels))
+        confusion = pd.DataFrame(confusion, columns=self.labels, index=self.labels)
+        seaborn.heatmap(confusion, annot=True)
+        plt.show()
+
+
+def svr_param_select(X, Y, n_folds=3):
+    Cs = [0.5, 1, 5, 10, 20]
+    gammas = ['scale', 'auto', 0.01, 0.001]
+    kernels = ['rbf', 'sigmoid']
+    param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels}
+    grid_search = GridSearchCV(svm.SVR(), param_grid, cv=n_folds, scoring='neg_mean_absolute_error')
+    grid_search.fit(X, Y)
+    return grid_search.best_params_
+
+
+def train_SVR(X, Y):
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+    param = svr_param_select(X, Y)
+    print(param)
+    svm_regressor = svm.SVR(epsilon=0.08, **param)
+    svm_regressor.fit(X_train, Y_train)
+    predicted_train = svm_regressor.predict(X_train)
+    predicted_test = svm_regressor.predict(X_test)
+    print('train err:%.2f, test err:%.2f' % (
+        mean_absolute_error(predicted_train, Y_train), mean_absolute_error(predicted_test, Y_test)))
+    return svm_regressor
+
+
 def svm_param_select(X, Y, n_folds=3):
-    # Cs = [0.01, 0.1, 1, 10]
     Cs = [10, 20, 50, 100, 200]
     gammas = ['scale', 0.0003, 0.0001, 0.0005, 0.0008, 0.001]
-    kernels = ['rbf']
-    param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels}
+    kernels = ['rbf', 'poly']
+    orders = [3, 4, 5]
+    param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels, 'degree': orders}
     grid_search = GridSearchCV(svm.SVC(), param_grid, cv=n_folds)
     grid_search.fit(X, Y)
     return grid_search.best_params_

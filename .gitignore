@@ -2,7 +2,7 @@
 *.zip
 *.pdf
 IRMAS*
-
+*.wav
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
