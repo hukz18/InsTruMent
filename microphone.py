@@ -2,13 +2,14 @@ import pyaudio
 import numpy as np
 import wave
 
+
 def Monitor_MIC(filename):
-    print('START')
+    print('START ' + filename)
     CHUNK = 512
     FORMAT = pyaudio.paInt16
     CHANNELS = 2
-    RATE = 44100 	#录音时的采样率
-    WAVE_OUTPUT_FILENAME = filename + ".wav"
+    RATE = 44100  # 录音时的采样率
+    WAVE_OUTPUT_FILENAME = filename
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT,
                     channels=CHANNELS,
@@ -17,7 +18,7 @@ def Monitor_MIC(filename):
                     frames_per_buffer=CHUNK)
     frames = []
 
-    #print("ready for recording" + str(time.localtime(time.time()).tm_sec))
+    # print("ready for recording" + str(time.localtime(time.time()).tm_sec))
     for i in range(0, 5):
         data = stream.read(CHUNK)
         frames.append(data)
@@ -26,13 +27,14 @@ def Monitor_MIC(filename):
     print("detected a signal")
     less = []
     frames2 = []
-    for ti in range(30):
+    n = np.random.randint(8, 15)
+    for ti in range(n):
         for i in range(0, 31):
             data2 = stream.read(CHUNK)
             frames2.append(data2)
         audio_data2 = np.fromstring(data2, dtype=np.short)
         temp2 = np.max(audio_data2)
-        print("recording,current strength：",temp2)
+        # print("recording,current strength：",temp2)
 
     stream.stop_stream()
     stream.close()
@@ -43,6 +45,8 @@ def Monitor_MIC(filename):
     wf.setframerate(RATE)
     wf.writeframes(b''.join(frames2))
     wf.close()
+    print('END ' + filename)
+
 
 if __name__ == '__main__':
     Monitor_MIC('lala')
