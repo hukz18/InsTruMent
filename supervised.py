@@ -19,11 +19,11 @@ class ML_Classifier:
                        'org', 'pia', 'sax', 'tru', 'vio']
         self.clf_type = clf_type
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
-        self.meta_labels = [['pia', 'gel'], ['sax', 'org', 'cel', 'cla', 'flu', 'gac', 'vio', 'tru']]
+        self.meta_labels = [['cel', 'vio'], ['sax', 'tru', 'cla', 'flu'], ['gel', 'gac', 'org', 'pia']]
         self.discriminators = {}
         self.meta_discriminators = []
         self.class_num = 10
-        self.meta_class_num = 2
+        self.meta_class_num = 3
 
     def add_meta_clf(self, features, labels):
         if self.clf_type == 'SVM':
@@ -51,6 +51,8 @@ class ML_Classifier:
         mfcc = mfcc[np.newaxis, :]
         feature = get_feature_npy(mfcc)
         result = np.zeros(self.meta_class_num)
+        if not len(self.meta_discriminators):
+            return None
         for i in range(self.meta_class_num):
             result[i] = self.meta_discriminators[i].predict(feature)
         return result
@@ -72,7 +74,7 @@ class ML_Classifier:
                 labels += self.meta_labels[i] if meta_label[i] else []
         mfcc = mfcc[np.newaxis, :]
         result = np.zeros(self.class_num)
-        feature = get_feature_npy(mfcc)
+        feature = get_feature_npy(mfcc)  # feature: 1*40
         for label in labels:
             result[self.label_to_idx[label]] = self.discriminators[label].predict(feature)
         return result
@@ -81,12 +83,10 @@ class ML_Classifier:
         true_labels, predict_labels = [], []
         for mfcc, labels in tqdm(test_iter):
             true_label = np.zeros(self.class_num)
-            # meta_label = self.predict_meta(mfcc)
-            meta_label = None
+            meta_label = self.predict_meta(mfcc)
             for label in labels:
                 true_label[self.label_to_idx[label]] = True
             true_labels.append(true_label)
-            # predict_labels.append(self.predict_one(mfcc, meta_label))
             predict_labels.append(self.predict_one(mfcc, meta_label))
         predict_labels = np.array(predict_labels)
         true_labels = np.array(true_labels)
@@ -105,7 +105,7 @@ class ML_Regressor:
         self.labels = ['cel', 'cla', 'flu', 'gac', 'gel',
                        'org', 'pia', 'sax', 'tru', 'vio']
         self.label_to_idx = {v: i for (i, v) in enumerate(self.labels)}
-        self.thresholds = np.array([0] * 10)
+        self.thresholds = np.array([0.5] * 10)
         self.regressors = {}
         self.class_num = 10
 
@@ -154,7 +154,7 @@ def svr_param_select(X, Y, n_folds=3):
     gammas = ['scale', 'auto', 0.01, 0.001]
     kernels = ['rbf', 'sigmoid']
     param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels}
-    grid_search = GridSearchCV(svm.SVR(), param_grid, cv=n_folds, scoring='neg_mean_absolute_error')
+    grid_search = GridSearchCV(svm.SVR(), param_grid, cv=n_folds, scoring='neg_mean_absolute_error', n_jobs=-1)
     grid_search.fit(X, Y)
     return grid_search.best_params_
 
@@ -175,10 +175,9 @@ def train_SVR(X, Y):
 def svm_param_select(X, Y, n_folds=3):
     Cs = [10, 20, 50, 100, 200]
     gammas = ['scale', 0.0003, 0.0001, 0.0005, 0.0008, 0.001]
-    kernels = ['rbf', 'poly']
-    orders = [3, 4, 5]
-    param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels, 'degree': orders}
-    grid_search = GridSearchCV(svm.SVC(), param_grid, cv=n_folds)
+    kernels = ['rbf', 'sigmoid']
+    param_grid = {'C': Cs, 'gamma': gammas, 'kernel': kernels}
+    grid_search = GridSearchCV(svm.SVC(), param_grid, cv=n_folds, n_jobs=-1)
     grid_search.fit(X, Y)
     return grid_search.best_params_
 
@@ -192,7 +191,7 @@ def train_SVM(X, Y):
     svm_classifier.fit(X_train, Y_train)
     predicted_train = svm_classifier.predict(X_train)
     predicted_test = svm_classifier.predict(X_test)
-    print('train acc:%.2f, test acc:%.2f' % (
+    print('train acc:%.4f, test acc:%.4f' % (
         accuracy_score(predicted_train, Y_train), accuracy_score(predicted_test, Y_test)))
     return svm_classifier
 
@@ -202,7 +201,7 @@ def RF_param_select(X, Y, n_folds=3):
     n_estimators = [20, 50, 100, 200]
     max_depth = [15, 18, 21]
     param_grid = {'n_estimators': n_estimators, 'criterion': criterion, 'max_depth': max_depth}
-    grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=n_folds)
+    grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=n_folds, n_jobs=-1)
     grid_search.fit(X, Y)
     return grid_search.best_params_
 
@@ -211,11 +210,11 @@ def train_RF(X, Y):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
     param = RF_param_select(X_train, Y_train)
     print(param)
-    RF_classifier = RandomForestClassifier(n_jobs=-1, **param)
+    RF_classifier = RandomForestClassifier(**param)
     RF_classifier.fit(X_train, y=Y_train)
     predicted_train = RF_classifier.predict(X_train)
     predicted_test = RF_classifier.predict(X_test)
-    print('train acc:%.2f, test acc:%.2f' % (
+    print('train acc:%.4f, test acc:%.4f' % (
         accuracy_score(predicted_train, Y_train), accuracy_score(predicted_test, Y_test)))
     return RF_classifier
 
@@ -225,7 +224,7 @@ def XGB_param_select(X, Y, n_folds=3):
     max_depth = [50, 70, 90]
     min_child_weight = [1, 1.5, 2]
     param_grid = {'n_estimators': n_estimators, 'max_depth': max_depth, 'min_child_weight': min_child_weight}
-    grid_search = GridSearchCV(XGBClassifier(), param_grid, cv=n_folds)
+    grid_search = GridSearchCV(XGBClassifier(), param_grid, cv=n_folds, n_jobs=-1)
     grid_search.fit(X, Y)
     return grid_search.best_params_
 
@@ -238,6 +237,6 @@ def train_XGB(X, Y):
     XGB_classifier.fit(X_train, Y_train)
     predicted_train = XGB_classifier.predict(X_train)
     predicted_test = XGB_classifier.predict(X_test)
-    print('train acc:%.2f, test acc:%.2f' % (
+    print('train acc:%.4f, test acc:%.4f' % (
         accuracy_score(predicted_train, Y_train), accuracy_score(predicted_test, Y_test)))
     return XGB_classifier

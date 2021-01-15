@@ -5,7 +5,7 @@ import unsuperivesd
 import numpy as np
 import os
 # from torchaudio.transforms import MFCC
-import torch
+
 import pickle
 
 '''
@@ -18,25 +18,24 @@ import pickle
 	gac(637), gel(760), org(682), pia(721), sax(626), tru(577), vio(580), voi(778).
 '''
 
-dataset_path = './IRMAS-TestingData-Part[1]'
+dataset_path = './dataset/IRMAS-TestingData-Part[1-3]'
+is_delete_npy = True
 is_gen_mfcc = True
-is_gen_dataset = False
-is_delete_npy = False
+is_gen_dataset = True
 
 if is_delete_npy:
     npy_file = glob(f'{dataset_path}/*/*.npy')
     for file in npy_file:
         print(f'remove file {file}')
         os.remove(file)
-    exit(0)
-
-if is_gen_dataset:
-    for i in range(1, 4):
-        generate_dataset(f'./IRMAS-TestingData-Part{i}', i)
-    exit(0)
 if is_gen_mfcc:
     generate_features(dataset_path)
+if is_gen_dataset:
+    for i in range(1, 4):
+        generate_dataset(f'./dataset/IRMAS-TestingData-Part{i}', i)
     exit(0)
+
+
 
 def train_classifier():  # 使用单层判别器训练
     ml_classifier = ML_Classifier('SVM')  # use 'SVM', 'RF', or 'XGB'
@@ -45,9 +44,6 @@ def train_classifier():  # 使用单层判别器训练
     for label in ml_classifier.labels:
         print('training:' + label)
         lbs = np.array([True if label in l else False for l in label_list])
-        print(result_mfcc.shape)
-        print(len(lbs))
-        print(label)
         ml_classifier.add_clf(result_mfcc, lbs, label)
     test_iter = get_test_data_iter()
     ml_classifier.evaluate(test_iter)
@@ -85,7 +81,7 @@ def train_regressor():  # 使用回归器训练
     result_mfcc = get_feature_npy(mfccs)
     for label in ml_regressor.labels:
         print('training:' + label)
-        lbs = np.array([1 if label in l else -1 for l in label_list])
+        lbs = np.array([1 if label in l else 0 for l in label_list])
         ml_regressor.add_rgs(result_mfcc, lbs, label)
     test_iter = get_test_data_iter()
     ml_regressor.evaluate(test_iter)
