@@ -1,10 +1,13 @@
 import feature
 from glob import glob
 import librosa
+from dataset import get_test_data_iter
 from librosa.feature.spectral import mfcc
+from scipy.io import wavfile
 import numpy as np
 import pickle
-import micro
+import microphone
+import threading
 
 micro.Monitor_MIC('lala')
 w, s = librosa.load('./lala.wav')
