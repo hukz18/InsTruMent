@@ -7,9 +7,8 @@ import pickle
 import micro
 
 micro.Monitor_MIC('lala')
-file = 'lala.wav'
-print(file)
-w, s = librosa.load(file)
+w, s = librosa.load('./lala.wav')
+w = 0.8/np.max(np.array(w))*np.array(w)
 mfcc = librosa.feature.mfcc(y=w, sr=s, n_mfcc=40)
 print(mfcc.shape)
 #np.save(file.replace('wav', 'npy'), mfcc)
